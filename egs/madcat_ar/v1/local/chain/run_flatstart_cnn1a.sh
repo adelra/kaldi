@@ -16,6 +16,10 @@
 # steps/info/chain_dir_info.pl exp/chain/e2e_cnn_1a/
 # exp/chain/e2e_cnn_1a/: num-iters=195 nj=6..16 num-params=2.9M dim=40->324 combine=-0.065->-0.064 (over 5) logprob:train/valid[129,194,final]=(-0.078,-0.077,-0.086/-0.129,-0.126,-0.127)
 
+# steps/info/chain_dir_info.pl exp/chain/e2e_cnn_1a/
+# exp/chain/e2e_cnn_1a/: num-iters=195 nj=6..16 num-params=2.9M dim=40->324 combine=-0.065->-0.064 (over 5) logprob:train/valid[129,194,final]=(-0.078,-0.077,-0.086/-0.129,-0.126,-0.127)
+>>>>>>> 2fa70e3a6f44b1a101a736b21433ae3c87f5fb61
+
 set -e
 
 # configs for 'chain'

@@ -257,6 +257,65 @@ def minimum_bounding_box(points):
     """ Given a list of 2D points, it returns the minimum area rectangle bounding all
         the points in the point cloud.
     Returns
+    -------
+    integer: Negative if p1 is clockwise of p2.
+    """
+    difference = (
+        ((p2[0] - origin[0]) * (p1[1] - origin[1]))
+        - ((p1[0] - origin[0]) * (p2[1] - origin[1]))
+    )
+    return difference
+
+
+def compute_hull(points):
+    """
+    Given input list of points, return a list of points that
+    made up the convex hull.
+    Returns
+    -------
+    [(float, float)]: convexhull points
+    """
+    hull_points = []
+    start = points[0]
+    min_x = start[0]
+    for p in points[1:]:
+        if p[0] < min_x:
+            min_x = p[0]
+            start = p
+
+    point = start
+    hull_points.append(start)
+
+    far_point = None
+    while far_point is not start:
+        p1 = None
+        for p in points:
+            if p is point:
+                continue
+            else:
+                p1 = p
+                break
+
+        far_point = p1
+
+        for p2 in points:
+            if p2 is point or p2 is p1:
+                continue
+            else:
+                direction = get_orientation(point, far_point, p2)
+                if direction > 0:
+                    far_point = p2
+
+        hull_points.append(far_point)
+        point = far_point
+    return hull_points
+
+
+def minimum_bounding_box(points):
+    """ Given a list of 2D points, it returns the minimum area rectangle bounding all
+        the points in the point cloud.
+>>>>>>> 2fa70e3a6f44b1a101a736b21433ae3c87f5fb61
+    Returns
     ------
     returns a namedtuple that contains:
     area: area of the rectangle
@@ -500,6 +559,11 @@ def check_file_location(base_name, wc_dict1, wc_dict2, wc_dict3):
     image_file_path1 = os.path.join(args.database_path1, 'images', base_name + '.tif')
     image_file_path2 = os.path.join(args.database_path2, 'images', base_name + '.tif')
     image_file_path3 = os.path.join(args.database_path3, 'images', base_name + '.tif')
+
+    image_file_path1 = os.path.join(args.database_path1, 'images', base_name + '.tif')
+    image_file_path2 = os.path.join(args.database_path2, 'images', base_name + '.tif')
+    image_file_path3 = os.path.join(args.database_path3, 'images', base_name + '.tif')
+>>>>>>> 2fa70e3a6f44b1a101a736b21433ae3c87f5fb61
 
     if os.path.exists(madcat_file_path1):
         return madcat_file_path1, image_file_path1, wc_dict1
