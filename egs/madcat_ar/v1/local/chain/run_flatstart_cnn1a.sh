@@ -5,20 +5,16 @@
 
 # local/chain/compare_wer.sh exp/chain/e2e_cnn_1a
 # System                      e2e_cnn_1a
-# WER                             10.71
-# CER                              2.85
-# Final train prob              -0.0859
-# Final valid prob              -0.1266
+# WER                             15.03
+# CER                              4.07
+# Final train prob              -0.1556
+# Final valid prob              -0.1284
 # Final train prob (xent)
 # Final valid prob (xent)
-# Parameters                      2.94M
+# Parameters                      3.57M
 
 # steps/info/chain_dir_info.pl exp/chain/e2e_cnn_1a/
-# exp/chain/e2e_cnn_1a/: num-iters=195 nj=6..16 num-params=2.9M dim=40->324 combine=-0.065->-0.064 (over 5) logprob:train/valid[129,194,final]=(-0.078,-0.077,-0.086/-0.129,-0.126,-0.127)
-
-# steps/info/chain_dir_info.pl exp/chain/e2e_cnn_1a/
-# exp/chain/e2e_cnn_1a/: num-iters=195 nj=6..16 num-params=2.9M dim=40->324 combine=-0.065->-0.064 (over 5) logprob:train/valid[129,194,final]=(-0.078,-0.077,-0.086/-0.129,-0.126,-0.127)
->>>>>>> 2fa70e3a6f44b1a101a736b21433ae3c87f5fb61
+# exp/chain/e2e_cnn_1a/: num-iters=226 nj=3..16 num-params=3.6M dim=40->324 combine=-0.059->-0.059 (over 3) logprob:train/valid[149,225,final]=(-0.134,-0.159,-0.156/-0.131,-0.129,-0.128)
 
 set -e
 
@@ -32,9 +28,9 @@ affix=1a
 # training options
 tdnn_dim=450
 num_epochs=2
-num_jobs_initial=6
+num_jobs_initial=8
 num_jobs_final=16
-minibatch_size=150=128,64/300=128,64/600=64,32/1200=32,16
+minibatch_size=150=100,64/300=50,32/600=25,16/1200=16,8
 common_egs_dir=
 l2_regularize=0.00005
 frames_per_iter=1000000
@@ -90,9 +86,13 @@ fi
 if [ $stage -le 2 ]; then
   echo "$0: creating neural net configs using the xconfig parser";
   num_targets=$(tree-info $treedir/tree | grep num-pdfs | awk '{print $2}')
-  common1="required-time-offsets= height-offsets=-2,-1,0,1,2 num-filters-out=36"
-  common2="required-time-offsets= height-offsets=-2,-1,0,1,2 num-filters-out=70"
-  common3="required-time-offsets= height-offsets=-1,0,1 num-filters-out=70"
+
+  cnn_opts="l2-regularize=0.005"
+  tdnn_opts="l2-regularize=0.005"
+  output_opts="l2-regularize=0.005"
+  common1="$cnn_opts required-time-offsets= height-offsets=-2,-1,0,1,2 num-filters-out=36"
+  common2="$cnn_opts required-time-offsets= height-offsets=-2,-1,0,1,2 num-filters-out=70"
+  common3="$cnn_opts required-time-offsets= height-offsets=-1,0,1 num-filters-out=70"
   mkdir -p $dir/configs
   cat <<EOF > $dir/configs/network.xconfig
   input dim=40 name=input
@@ -101,14 +101,14 @@ if [ $stage -le 2 ]; then
   conv-relu-batchnorm-layer name=cnn3 height-in=20 height-out=20 time-offsets=-4,-2,0,2,4 $common2
   conv-relu-batchnorm-layer name=cnn4 height-in=20 height-out=20 time-offsets=-4,-2,0,2,4 $common2
   conv-relu-batchnorm-layer name=cnn5 height-in=20 height-out=10 time-offsets=-4,-2,0,2,4 $common2 height-subsample-out=2
-  conv-relu-batchnorm-layer name=cnn6 height-in=10 height-out=10 time-offsets=-4,0,4 $common3
-  conv-relu-batchnorm-layer name=cnn7 height-in=10 height-out=10 time-offsets=-4,0,4 $common3
-  relu-batchnorm-layer name=tdnn1 input=Append(-4,0,4) dim=$tdnn_dim
-  relu-batchnorm-layer name=tdnn2 input=Append(-4,0,4) dim=$tdnn_dim
-  relu-batchnorm-layer name=tdnn3 input=Append(-4,0,4) dim=$tdnn_dim
+  conv-relu-batchnorm-layer name=cnn6 height-in=10 height-out=10 time-offsets=-1,0,1 $common3
+  conv-relu-batchnorm-layer name=cnn7 height-in=10 height-out=10 time-offsets=-1,0,1 $common3
+  relu-batchnorm-layer name=tdnn1 input=Append(-4,-2,0,2,4) dim=$tdnn_dim $tdnn_opts
+  relu-batchnorm-layer name=tdnn2 input=Append(-4,0,4) dim=$tdnn_dim $tdnn_opts
+  relu-batchnorm-layer name=tdnn3 input=Append(-4,0,4) dim=$tdnn_dim $tdnn_opts
   ## adding the layers for chain branch
-  relu-batchnorm-layer name=prefinal-chain dim=$tdnn_dim target-rms=0.5
-  output-layer name=output include-log-softmax=false dim=$num_targets max-change=1.5
+  relu-batchnorm-layer name=prefinal-chain dim=$tdnn_dim target-rms=0.5 $output_opts
+  output-layer name=output include-log-softmax=false dim=$num_targets max-change=1.5 $output_opts
 EOF
 
   steps/nnet3/xconfig_to_configs.py --xconfig-file $dir/configs/network.xconfig --config-dir $dir/configs
